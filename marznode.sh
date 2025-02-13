@@ -102,13 +102,13 @@ node_directory=${node_directory:-node$(openssl rand -hex 1)}
 # clean up 
 print_info "directory set to: $node_directory"
 print_info "Removing existing directories and files..."
-rm -rf "/opt/marznode/$node_directory" &> /dev/null
+rm -rf "/var/lib/$node_directory" &> /dev/null
 
 # Setting path
-sudo mkdir -p /opt/marznode/$node_directory
-sudo mkdir -p /opt/marznode/$node_directory/xray
-sudo mkdir -p /opt/marznode/$node_directory/sing-box
-sudo mkdir -p /opt/marznode/$node_directory/hysteria
+sudo mkdir -p /var/lib/$node_directory
+sudo mkdir -p /var/lib/$node_directory/xray
+sudo mkdir -p /var/lib/$node_directory/sing-box
+sudo mkdir -p /var/lib/$node_directory/hysteria
 
 # Port setup
 while true; do
@@ -129,7 +129,7 @@ while IFS= read -r line; do
   cert+="$line\n"
 done
 
-echo -e "$cert" | sudo tee /opt/marznode/$node_directory/client.pem > /dev/null
+echo -e "$cert" | sudo tee /var/lib/$node_directory/client.pem > /dev/null
 
 # xray
 print_info "Which version of xray core do you want? (e.g., 1.8.24) (leave blank for latest): "
@@ -151,9 +151,16 @@ hversion=${hversion#app/v}
 
 # Fetching xray core and setting it up
 arch=$(x_architecture)
-cd "/opt/marznode/$node_directory/xray"
+cd "/var/lib/$node_directory/xray"
+
+chmod +x "/var/lib/$node_directory/xray"
+chmod +x "/var/lib/$node_directory/assets"
 
 wget -O config.json "https://raw.githubusercontent.com/mikeesierrah/ez-node/refs/heads/main/etc/xray.json"
+
+wget -q --show-progress "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat" -O "/var/lib/$node_directory/assets/geoip.dat"
+wget -q --show-progress "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat" -O "/var/lib/$node_directory/assets/geosite.dat"
+wget -q --show-progress "https://github.com/bootmortis/iran-hosted-domains/releases/latest/download/iran.dat" -O "/var/lib/$node_directory/assets/iran.dat"
 
 print_info "Fetching Xray core version $xversion..."
 
@@ -174,7 +181,7 @@ fi
 print_success "Success! xray installed"
 
 # bulding sing-box
-cd /opt/marznode/$node_directory/sing-box
+cd /var/lib/$node_directory/sing-box
 wget -O config.json "https://raw.githubusercontent.com/mikeesierrah/ez-node/refs/heads/main/etc/sing-box.json"
 echo $sversion
 wget -O sing.zip "https://github.com/SagerNet/sing-box/archive/refs/tags/v${sversion#v}.zip"
@@ -183,7 +190,7 @@ cd ./sing-box-${sversion#v}
 # TAGS="with_gvisor,with_quic,with_dhcp,with_wireguard,with_ech,with_utls,with_reality_server,with_acme,with_clash_api,with_v2ray_api,with_grpc" make
 go build -v -trimpath -ldflags "-X github.com/sagernet/sing-box/constant.Version=${sversion#v} -s -w -buildid=" -tags with_gvisor,with_dhcp,with_wireguard,with_reality_server,with_clash_api,with_quic,with_utls,with_ech,with_v2ray_api,with_grpc ./cmd/sing-box
 chmod +x ./sing-box
-mv sing-box /opt/marznode/$node_directory/sing-box/$node_directory-box
+mv sing-box /var/lib/$node_directory/sing-box/$node_directory-box
 cd ..
 rm sing.zip
 rm -rf ./sing-box-${sversion#v}
@@ -191,7 +198,7 @@ rm -rf ./sing-box-${sversion#v}
 print_success "Success! sing-box installed"
 
 # Fetching hysteria core and setting it up
-cd /opt/marznode/$node_directory/hysteria
+cd /var/lib/$node_directory/hysteria
 wget -O config.yaml "https://raw.githubusercontent.com/mikeesierrah/ez-node/refs/heads/main/etc/hysteria.yaml"
 arch=$(hys_architecture)
 wget -O $node_directory-teria "https://github.com/apernet/hysteria/releases/download/app/v$hversion/hysteria-linux-$arch"
@@ -211,36 +218,36 @@ read -r answer
 hys_enable=$( [[ "$answer" =~ ^[Yy]$ ]] && echo "True" || echo "False" )
 
 # Defining env docker path
-ENV="/opt/marznode/$node_directory/.env"
-DOCKER="/opt/marznode/$node_directory/docker-compose.yml"
+ENV="/var/lib/$node_directory/.env"
+DOCKER="/var/lib/$node_directory/docker-compose.yml"
 
 # Setting up env
 cat << EOF > "$ENV"
 SERVICE_ADDRESS=0.0.0.0
 SERVICE_PORT=$service
-#INSECURE=False
+INSECURE=TRUE
 
 XRAY_ENABLED=$x_enable
-XRAY_EXECUTABLE_PATH=/opt/marznode/$node_directory/xray/$node_directory-core
-XRAY_ASSETS_PATH=/opt/marznode/$node_directory/xray
-XRAY_CONFIG_PATH=/opt/marznode/$node_directory/xray/config.json
+XRAY_EXECUTABLE_PATH=/var/lib/$node_directory/xray/$node_directory-core
+XRAY_ASSETS_PATH=/var/lib/$node_directory/assets
+XRAY_CONFIG_PATH=/var/lib/$node_directory/xray/config.json
 #XRAY_VLESS_REALITY_FLOW=xtls-rprx-vision
-#XRAY_RESTART_ON_FAILURE=True
-#XRAY_RESTART_ON_FAILURE_INTERVAL=5
+XRAY_RESTART_ON_FAILURE=True
+XRAY_RESTART_ON_FAILURE_INTERVAL=5
 
 HYSTERIA_ENABLED=$hys_enable
-HYSTERIA_EXECUTABLE_PATH=/opt/marznode/$node_directory/hysteria/$node_directory-teria
-HYSTERIA_CONFIG_PATH=/opt/marznode/$node_directory/hysteria/config.yaml
+HYSTERIA_EXECUTABLE_PATH=/var/lib/$node_directory/hysteria/$node_directory-teria
+HYSTERIA_CONFIG_PATH=/var/lib/$node_directory/hysteria/config.yaml
 
 SING_BOX_ENABLED=$sing_enable
-SING_BOX_EXECUTABLE_PATH=/opt/marznode/$node_directory/sing-box/$node_directory-box
-SING_BOX_CONFIG_PATH=/opt/marznode/$node_directory/sing-box/config.json
+SING_BOX_EXECUTABLE_PATH=/var/lib/$node_directory/sing-box/$node_directory-box
+SING_BOX_CONFIG_PATH=/var/lib/$node_directory/sing-box/config.json
 #SING_BOX_RESTART_ON_FAILURE=True
 #SING_BOX_RESTART_ON_FAILURE_INTERVAL=5
 
 SSL_KEY_FILE=./server.key
 SSL_CERT_FILE=./server.cert
-SSL_CLIENT_CERT_FILE=/opt/marznode/$node_directory/client.pem
+SSL_CLIENT_CERT_FILE=/var/lib/$node_directory/client.pem
 
 #DEBUG=True
 #AUTH_GENERATION_ALGORITHM=xxh128
@@ -251,25 +258,25 @@ print_success ".env file has been created successfully."
 # Setting up docker-compose.yml
 cat << EOF > $DOCKER
 services:
-  marznode:
+  $node_directory:
     image: dawsh/marznode:latest
     restart: always
     network_mode: host
     command: [ "sh", "-c", "sleep 10 && python3 marznode.py" ]
     env_file: .env
     volumes:
-      - /opt/marznode/$node_directory:/opt/marznode/$node_directory
+      - /var/lib/$node_directory:/var/lib/$node_directory
 EOF
 print_success "docker-compose.yml has been created successfully."
 
 #Setting up control script 
-cat << 'EOF' > /usr/local/bin/marznode
+cat << 'EOF' > /usr/local/bin/$node_directory
 #!/bin/bash
-DEFAULT_DIR="/opt/marznode"
+DEFAULT_DIR="/var/lib"
 DIR="$DEFAULT_DIR/${1:-}"
 COMMAND="$2"
 
-cd "$DIR" || { echo "Directory not found: $DIR"; echo "Usage: marznode <node-name> restart | start | stop"; exit 1; }
+cd "$DIR" || { echo "Directory not found: $DIR"; echo "Usage:  <node-name> restart | start | stop"; exit 1; }
 
 case "$COMMAND" in
     restart) docker compose restart -t 0 ;;
@@ -279,11 +286,10 @@ case "$COMMAND" in
 esac
 EOF
 
-sudo chmod +x /usr/local/bin/marznode
+sudo chmod +x /usr/local/bin/$node_directory
 
 print_success "Script installed successfully at /usr/local/bin/marznode"
 
-cd "/opt/marznode/$node_directory" || { print_error "Something went wrong! Couldn't enter $node_directory directory"; exit 1; }
+cd "/var/lib/$node_directory" || { print_error "Something went wrong! Couldn't enter $node_directory directory"; exit 1; }
 docker compose up -d --remove-orphans
-
 
