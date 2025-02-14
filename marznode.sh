@@ -107,6 +107,7 @@ rm -rf "/var/lib/$node_directory" &> /dev/null
 # Setting path
 sudo mkdir -p /var/lib/$node_directory
 sudo mkdir -p /var/lib/$node_directory/xray
+sudo mkdir -p /var/lib/$node_directory/xray/assets
 sudo mkdir -p /var/lib/$node_directory/sing-box
 sudo mkdir -p /var/lib/$node_directory/hysteria
 
@@ -153,14 +154,12 @@ hversion=${hversion#app/v}
 arch=$(x_architecture)
 cd "/var/lib/$node_directory/xray"
 
-chmod +x "/var/lib/$node_directory/xray"
-chmod +x "/var/lib/$node_directory/assets"
-
 wget -O config.json "https://raw.githubusercontent.com/mikeesierrah/ez-node/refs/heads/main/etc/xray.json"
 
-wget -q --show-progress "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat" -O "/var/lib/$node_directory/assets/geoip.dat"
-wget -q --show-progress "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat" -O "/var/lib/$node_directory/assets/geosite.dat"
-wget -q --show-progress "https://github.com/bootmortis/iran-hosted-domains/releases/latest/download/iran.dat" -O "/var/lib/$node_directory/assets/iran.dat"
+
+wget -q --show-progress "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat" -O "/var/lib/$node_directory/xray/assets/geoip.dat"
+wget -q --show-progress "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat" -O "/var/lib/$node_directory/xray/assets/geosite.dat"
+wget -q --show-progress "https://github.com/bootmortis/iran-hosted-domains/releases/latest/download/iran.dat" -O "/var/lib/$node_directory/xray/assets/iran.dat"
 
 print_info "Fetching Xray core version $xversion..."
 
@@ -225,11 +224,11 @@ DOCKER="/var/lib/$node_directory/docker-compose.yml"
 cat << EOF > "$ENV"
 SERVICE_ADDRESS=0.0.0.0
 SERVICE_PORT=$service
-INSECURE=TRUE
+INSECURE=True
 
 XRAY_ENABLED=$x_enable
 XRAY_EXECUTABLE_PATH=/var/lib/$node_directory/xray/$node_directory-core
-XRAY_ASSETS_PATH=/var/lib/$node_directory/assets
+XRAY_ASSETS_PATH=/var/lib/$node_directory/xray/assets
 XRAY_CONFIG_PATH=/var/lib/$node_directory/xray/config.json
 #XRAY_VLESS_REALITY_FLOW=xtls-rprx-vision
 XRAY_RESTART_ON_FAILURE=True
@@ -258,7 +257,7 @@ print_success ".env file has been created successfully."
 # Setting up docker-compose.yml
 cat << EOF > $DOCKER
 services:
-  $node_directory:
+  marznode:
     image: dawsh/marznode:latest
     restart: always
     network_mode: host
@@ -270,13 +269,13 @@ EOF
 print_success "docker-compose.yml has been created successfully."
 
 #Setting up control script 
-cat << 'EOF' > /usr/local/bin/$node_directory
+cat << 'EOF' > /usr/local/bin/marznode
 #!/bin/bash
 DEFAULT_DIR="/var/lib"
 DIR="$DEFAULT_DIR/${1:-}"
 COMMAND="$2"
 
-cd "$DIR" || { echo "Directory not found: $DIR"; echo "Usage:  <node-name> restart | start | stop"; exit 1; }
+cd "$DIR" || { echo "Directory not found: $DIR"; echo "Usage: marznode <node-name> restart | start | stop"; exit 1; }
 
 case "$COMMAND" in
     restart) docker compose restart -t 0 ;;
@@ -286,10 +285,11 @@ case "$COMMAND" in
 esac
 EOF
 
-sudo chmod +x /usr/local/bin/$node_directory
+sudo chmod +x /usr/local/bin/marznode
 
 print_success "Script installed successfully at /usr/local/bin/marznode"
 
 cd "/var/lib/$node_directory" || { print_error "Something went wrong! Couldn't enter $node_directory directory"; exit 1; }
 docker compose up -d --remove-orphans
+
 
