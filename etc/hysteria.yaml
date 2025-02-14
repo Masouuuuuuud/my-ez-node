@@ -1,22 +1,19 @@
-listen: 127.0.0.1:6291
-
-acme:
-  domains:
-    - your.domain.net 
-  email: your@email.com
-
+listen: :443
+tls:
+    cert: /var/lib/masoud/hysteria/cert.pem
+    key: /var/lib/masoud/hysteria/key.pem
+    sniGuard: disable
 auth:
-  type: password
-  password: password
-
+    type: command
+    command: echo
 masquerade:
-  type: proxy
-  proxy:
-    url: https://www.speedtest.net
-    rewriteHost: true
+    type: proxy
+    proxy:
+        url: https://www.speedtest.net/
+        rewriteHost: true
 
 resolver:
   type: udp
   udp:
-    addr: 1.1.1.2:53
-    timeout: 10s
+    addr: 1.1.1.1:53
+    timeout: 5s
