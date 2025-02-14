@@ -1,38 +1,118 @@
 {
-    "log": {
+  "log": {
       "loglevel": "warning"
-    },
-    "routing": {
-      "rules": [
-        {
-          "ip": [
-            "geoip:private"
-          ],
-          "outboundTag": "BLOCK",
-          "type": "field"
-        }
-      ]
-    },
-    "inbounds": [
+  },
+  "inbounds": [
       {
-        "tag": "Shadowsocks",
-        "listen": "127.0.0.1",
-        "port": 6292,
-        "protocol": "shadowsocks",
-        "settings": {
-          "clients": [],
-          "network": "tcp,udp"
-        }
+          "tag": "vless gRPC Reality",
+          "listen": "0.0.0.0",
+          "port": 443,
+          "protocol": "vless",
+          "settings": {
+              "clients": [],
+              "decryption": "none"
+          },
+          "streamSettings": {
+              "network": "grpc",
+              "grpcSettings": {
+                  "serviceName": "srv"
+              },
+              "security": "reality",
+              "realitySettings": {
+                  "show": false,
+                  "dest": "www.speedtest.net:443",
+                  "xver": 0,
+                  "serverNames": [
+                      "www.speedtest.net"
+                  ],
+                  "privateKey": "qAUa14N43ingVNXtXIxa8EwP-ds8tRTvAkVOdIoQbTs",
+                  "shortIds": [
+                      "3172a8b20a1373b0"
+                  ]
+              }
+          },
+          "sniffing": {
+              "enabled": true,
+              "destOverride": [
+                  "http",
+                  "tls"
+              ]
+          }
       }
-    ],
-    "outbounds": [
+  ],
+  "outbounds": [
       {
-        "protocol": "freedom",
-        "tag": "DIRECT"
+          "protocol": "freedom",
+          "settings": {},
+          "tag": "DIRECT"
       },
       {
-        "protocol": "blackhole",
-        "tag": "BLOCK"
+          "protocol": "blackhole",
+          "settings": {},
+          "tag": "blackhole"
       }
-    ]
+  ],
+  "routing": {
+      "domainStrategy": "IPIfNonMatch",
+      "rules": [
+          {
+              "type": "field",
+              "outboundTag": "blackhole",
+              "ip": [
+                  "geoip:private",
+                  "geoip:ir"
+              ]
+          },
+          {
+              "type": "field",
+              "port": 53,
+              "network": "tcp,udp",
+              "outboundTag": "DNS-Internal"
+          },
+          {
+              "type": "field",
+              "outboundTag": "blackhole",
+              "protocol": [
+                  "bittorrent"
+              ]
+          },
+          {
+              "outboundTag": "blackhole",
+              "domain": [
+                  "regexp:.*\\.ir$",
+                  "ext:iran.dat:ir",
+                  "ext:iran.dat:other",
+                  "geosite:category-ir",
+                  "blogfa",
+                  "bank",
+                  "tebyan.net",
+                  "beytoote.com",
+                  "film2movie.ws",
+                  "zula.ir",
+                  "setare.com",
+                  "downloadha.com",
+                  "sanjesh.org",
+                  "speedtest.net",
+                  "ftp.debian.org",
+                  "speedtest.ir",
+                  "speedcheck.ir",
+                  "fast.com",
+                  "speedcheck.org",
+                  "speed.io",
+                  "yasdl.com",
+                  "patoghu.com",
+                  "ninisite.com",
+                  "aparat.com",
+                  "mrbilit.com",
+                  "digikala.com",
+                  "varzesh3.com",
+                  "filimo.com",
+                  "torob.com",
+                  "technolife.ir",
+                  "telewebion.com"
+              ],
+              "type": "field"
+          }
+      ]
   }
+}
