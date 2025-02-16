@@ -22,10 +22,6 @@ For Marzneshin:
 bash <(curl -Ls https://raw.githubusercontent.com/Masouuuuuuud/my-ez-node/refs/heads/slave/marznode.sh)
 ```
 
-For Marzban:
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mikeesierrah/ez-node/main/marzban-node.sh)
-```
 
 ## Directory Structure
 
