@@ -13,13 +13,22 @@ This script sets up nodes for the Marzneshin and Marzban panels.
 - Provides a control script for managing nodes (start, stop, restart)
 - Uses a single directory for easier management
 
+Generate cert and key for hysteria :
+```bash
+cd /var/lib/masoud/hysteria
+
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/C=XX/ST=StateName/L=CityName/O=CompanyName/OU=CompanySectionName/CN=CommonNameOrHostname"
+
+```
+
+
 ## Installation
 
 **Run the script as root:**
 
 For Marzneshin:
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mikeesierrah/ez-node/main/marznode.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/Masouuuuuuud/my-ez-node/refs/heads/slave/marznode.sh)
 ```
 
 For Marzban:
@@ -31,7 +40,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/mikeesierrah/ez-node/main/marz
 
 **Marznode:**
 ```
-/opt/marznode
+/var/lib
         └── your-node-name
                 ├── .env
                 ├── docker-compose.yml
